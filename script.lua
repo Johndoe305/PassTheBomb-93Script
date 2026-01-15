@@ -127,6 +127,83 @@ Tabs.Player:AddToggle("InfiniteJumpToggle", {
     end
 })
 
+-- ===================== HITBOX SYSTEM =====================
+
+local hitboxEnabled = false
+local hitboxScale = 0.35
+
+local OriginalSizes = {}
+
+local function saveOriginalSizes(char)
+    OriginalSizes = {}
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") then
+            OriginalSizes[part] = {
+                Size = part.Size,
+                CanCollide = part.CanCollide,
+                CanTouch = part.CanTouch,
+                Massless = part.Massless
+            }
+        end
+    end
+end
+
+local function applyHitbox(char)
+    for part, data in pairs(OriginalSizes) do
+        if part and part.Parent then
+            if part.Name ~= "HumanoidRootPart" then
+                part.Size = data.Size * hitboxScale
+            end
+            part.CanCollide = false
+            part.CanTouch = false
+            part.Massless = true
+        end
+    end
+end
+
+local function restoreHitbox()
+    for part, data in pairs(OriginalSizes) do
+        if part and part.Parent then
+            part.Size = data.Size
+            part.CanCollide = data.CanCollide
+            part.CanTouch = data.CanTouch
+            part.Massless = data.Massless
+        end
+    end
+end
+
+local function onCharacterAdded(char)
+    task.wait(0.6)
+    saveOriginalSizes(char)
+    if hitboxEnabled then
+        applyHitbox(char)
+    end
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
+Tabs.Player:AddToggle("HitboxToggle", {
+    Title = "Small Hitbox",
+    Default = false,
+    Callback = function(state)
+        hitboxEnabled = state
+
+        local char = player.Character
+        if not char then return end
+
+        if state then
+            saveOriginalSizes(char)
+            applyHitbox(char)
+        else
+            restoreHitbox()
+        end
+    end
+})
+
 -- ===================== VISUAL TAB =====================
 
 -- CONTROLE
